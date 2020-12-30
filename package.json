@@ -3,7 +3,8 @@
 	"version": "0.1.0",
 	"private": true,
 	"scripts": {
-		"start": "tsc && node dist/app.js",
+		"build": "tsc",
+		"start": "node dist/app.js",
 		"dev": "tsnd ./src/app.ts"
 	},
 	"dependencies": {
