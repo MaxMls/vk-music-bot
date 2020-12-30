@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import {VKApi, ConsoleLogger, BotsLongPollUpdatesProvider} from 'node-vk-sdk'
 import MessageNew from "./handlers/message_new";
+import http from "http";
 
 dotenv.config()
 
@@ -20,3 +21,12 @@ updatesProvider.getUpdates((updates: Array<any>) => {
 		message_new: MessageNew
 	}[item.type]?.(item.object, api)))
 })
+
+
+const requestListener = function (req, res) {
+	res.writeHead(200);
+	res.end('Hello, World!');
+}
+
+const server = http.createServer(requestListener);
+server.listen(8080);
