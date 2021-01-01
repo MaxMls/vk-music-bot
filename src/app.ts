@@ -8,14 +8,14 @@ dotenv.config()
 
 let api = new VKApi({
 	token: process.env.TOKEN,
-	logger: new ConsoleLogger()
+	logger: new ConsoleLogger(),
 })
 
 let updatesProvider = new BotsLongPollUpdatesProvider(api, +process.env.GROUP_ID)
 
 updatesProvider.getUpdates((updates: Array<any>) => {
 
-	console.log('got updates: ', JSON.stringify(updates, null, 2))
+	//console.log('got updates: ', JSON.stringify(updates, null, 2))
 
 	updates.forEach((item) => ({
 		message_new: MessageNew
