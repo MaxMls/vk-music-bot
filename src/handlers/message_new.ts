@@ -9,20 +9,23 @@ function print(v) {
 export default async function MessageNew(body: any, api: VKApi) {
 	let message = body.message as MessagesMessage
 
+	message = (await api.messagesGetById({
+		message_ids: [message.id],
+	})).items[0]
 
-	if (message.is_cropped) message = (await api.messagesGetById({message_ids: [message.id],})).items[0]
-
-	function extract(message, messages: any[] = []) {
+	function extract(message, messages: any[] = [], videos: any[] = []) {
 
 		if (Array.isArray(message?.fwd_messages)) {
-			message?.fwd_messages.map((v) => extract(v, messages))
+			message?.fwd_messages.map((v) => extract(v, messages, videos))
 		}
 		if (message?.reply_message) {
-			extract(message?.reply_message, messages)
+			extract(message?.reply_message, messages, videos)
 		}
 		if (Array.isArray(message?.attachments)) {
 			message?.attachments?.forEach(({type, ...attachment}) => {
-				if (type === "audio") {
+				if (type === "wall") {
+					extract(attachment?.wall, messages, videos)
+				} else if (type === "audio") {
 					const {audio: {artist, title, url}} = attachment
 					messages.push(`${artist} - ${title}\n${url || 'Похоже ссылка для этой аудиозаписи недоступна'}`)
 				} else if (type === "audio_message") {
@@ -30,20 +33,14 @@ export default async function MessageNew(body: any, api: VKApi) {
 					messages.push(`Голосовое сообщение\n${link_mp3 || 'Похоже ссылка для этого голосового сообщения недоступна'}`)
 				} else if (type === "video") {
 					const {video: {owner_id, id, access_key, title}} = attachment
-					messages.push({type, id: [owner_id, id, access_key].join('_'), title})
+					videos.push({id: [owner_id, id, access_key].join('_'), title})
 				}
 			})
 		}
-		return messages
+		return [messages, videos]
 	}
 
-	const messages = extract(message)
-
-	const videos = messages.reduce((previousValue: any[], currentValue, messageIndex) => {
-		if (currentValue?.type === 'video')
-			previousValue.push({...currentValue, messageIndex})
-		return previousValue
-	}, [])
+	const [messages, videos] = extract(message)
 
 
 	if (videos?.length) {
@@ -51,12 +48,10 @@ export default async function MessageNew(body: any, api: VKApi) {
 			access_token: process.env.ADMIN_TOKEN,
 			videos: videos.map(({id}) => id),
 		}).then((v) => {
-			videos.forEach(({messageIndex}, i) => {
-				// @ts-ignore
-				const {files, title}: VideoVideo = v.items[i]
+			// @ts-ignore
+			v.items.forEach(({title, files}) => {
 				const links = Object.entries(files)
-
-				messages[messageIndex] = `${title}\n${links.length ? links.map(([format, link]) => `${format}: ${link}`).join('\n') : 'Похоже ссылка для этого видео недоступна'}`
+				messages.push(`${title}\n${links.length ? links.map(([format, link]) => `${format}: ${link}`).join('\n') : 'Похоже ссылка для этого видео недоступна'}`)
 			})
 		})
 	}
@@ -69,9 +64,9 @@ export default async function MessageNew(body: any, api: VKApi) {
 			dont_parse_links: true
 		})
 
-	} catch (e){
-		if(e?.errorCode === 914){
-			for (let text of messages){
+	} catch (e) {
+		if (e?.errorCode === 914) {
+			for (let text of messages) {
 				await api.messagesSend({
 					message: text,
 					user_id: message.from_id,
@@ -79,9 +74,8 @@ export default async function MessageNew(body: any, api: VKApi) {
 					dont_parse_links: true
 				})
 			}
+		} else {
+			console.error(e)
 		}
 	}
-
-
-
 }
