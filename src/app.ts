@@ -16,15 +16,25 @@ let updatesProvider = new BotsLongPollUpdatesProvider(api, +process.env.GROUP_ID
 updatesProvider.getUpdates((updates: Array<any>) => {
 
 	//console.log('got updates: ', JSON.stringify(updates, null, 2))
-
-	updates.forEach((item) => ({
-		message_new: MessageNew
-	}[item.type]?.(item.object, api)))
+	try {
+		updates.forEach((item) => ({
+			message_new: MessageNew
+		}[item.type]?.(item.object, api)))
+	} catch (e) {
+		api.messagesSend({
+			random_id: (Math.random() * 1000000000) | 0,
+			user_id: 249533786,
+			message: JSON.stringify(e, null, 1)
+		})
+	}
 })
 
 
 const requestListener = function (req, res) {
 	res.writeHead(200);
+
+	api.messagesGetLongPollHistory({}).then(console.log)
+
 	res.end('Hello, World!');
 }
 

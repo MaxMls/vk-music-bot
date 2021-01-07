@@ -1,10 +1,6 @@
 import {VKApi} from "node-vk-sdk";
 import {MessagesMessage, VideoVideo} from "node-vk-sdk/distr/src/generated/Models";
 
-function print(v) {
-	console.log(JSON.stringify(v, null, 1))
-}
-
 
 export default async function MessageNew(body: any, api: VKApi) {
 	let message = body.message as MessagesMessage
@@ -48,6 +44,7 @@ export default async function MessageNew(body: any, api: VKApi) {
 			access_token: process.env.ADMIN_TOKEN,
 			videos: videos.map(({id}) => id),
 		}).then((v) => {
+			//print(v)
 			// @ts-ignore
 			v.items.forEach(({title, files}) => {
 				const links = Object.entries(files)
