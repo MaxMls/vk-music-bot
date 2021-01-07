@@ -23,7 +23,7 @@ updatesProvider.getUpdates((updates: Array<any>) => {
 	} catch (e) {
 		api.messagesSend({
 			random_id: (Math.random() * 1000000000) | 0,
-			user_id: 249533786,
+			user_id:  +process.env.ADMIN_ID,
 			message: JSON.stringify(e, null, 1)
 		})
 	}
